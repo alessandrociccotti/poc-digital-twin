@@ -65,6 +65,16 @@
 
 ## System flow
 
+Components:
+
+- Reference plant (SimPy): Simulates the hypothetical physical factory.
+- Telemetry system: Collects, stores and replays the reference plant's operational data.
+- State synchronizer: Maintains an up-to-date digital representation of the production line using telemetry.
+- Calibration: Estimates the digital twin's parameters from historical observations.
+- Twin simulation model: A separate simulation model that uses calibrated parameters to reproduce production behaviour and predict what happens when configurations change.
+- Analytics: Calculates throughput, machine utilisation, waiting time, WIP and bottleneck indicators.
+- Dashboard: Interactive monitoring and decision-support interface.
+
 ```mermaid
 flowchart LR
     R["Synthetic Reference Plant<br/>Independent Python / SimPy model"]
