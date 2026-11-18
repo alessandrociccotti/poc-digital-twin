@@ -39,3 +39,31 @@ Use a TeX distribution with `latexmk` and `pdflatex`. Each workstream edits its 
 ```
 
 The PDFs are written to the respective local `build/` directories.
+
+## Run the reference plant
+
+After installation, export the fixed-time baseline:
+
+```sh
+python -m digital_twin.simulation
+```
+
+The provisional defaults are a 100 s arrival interval, station times of
+60/90/30 s, buffer capacities of 2, and a 3,600 s horizon. The initially
+empty line receives its first part at time zero. Arrivals wait before
+casting when it is busy. Finished parts block their stations until the
+downstream buffer has space. Events at the horizon are excluded.
+
+The command creates `outputs/baseline/events.jsonl` and `run.json`.
+Expect 36 arrivals, 35 completions, and one unfinished part at CNC.
+The metadata records configuration, source, observation interval and
+unfinished part locations for the telemetry/analytics handoff.
+
+To enable lognormal processing times with 10% coefficient of variation:
+
+```sh
+python -m digital_twin.simulation --processing-cv 0.1 --seed 42 --output outputs/stochastic-42
+```
+
+Use `--help` for all configuration options. Choose a fresh output directory
+for every run. Failure and repair behaviour is planned for a later iteration.
