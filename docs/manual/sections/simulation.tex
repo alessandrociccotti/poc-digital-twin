@@ -1,2 +1,64 @@
 \section{Run the baseline simulation}
-% Add setup, run parameters, and expected output paths.
+
+\subsection{Installation}
+Use Python 3.11 or later. From the repository root, create and activate a
+virtual environment, install the project, and run its checks.
+\begin{verbatim}
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -e '.[dev]'
+python -m pytest
+\end{verbatim}
+
+\subsection{Fixed-time baseline}
+Run the following command from the repository root.
+\begin{verbatim}
+python -m digital_twin.simulation
+\end{verbatim}
+The default run uses arrivals every 100 seconds, processing times of 60,
+90, and 30 seconds, buffer capacities of two parts, and a 3,600-second
+observation horizon. These values are provisional modelling assumptions.
+
+The output directory is \texttt{outputs/baseline}. It contains the
+ordered trace in \texttt{events.jsonl} and configuration, completion
+counts, and unfinished part locations in \texttt{run.json}.
+Expect 36 arrivals, 35 completions, and one unfinished part. Existing
+output directories are rejected; choose a fresh path for each additional run.
+
+\subsection{Optional variability and configuration}
+The following command uses lognormal processing times with a coefficient
+of variation of 0.1 and seed 42.
+\begin{verbatim}
+python -m digital_twin.simulation \
+  --processing-cv 0.1 --seed 42 \
+  --output outputs/stochastic-42
+\end{verbatim}
+Repeating the same configuration and seed gives the same trace. Choose a
+different output path for the repeat.
+
+Use the following options to change the baseline.
+\begin{verbatim}
+--arrival-interval-s 100
+--casting-time-s 60
+--cnc-time-s 90
+--leak-test-time-s 30
+--buffer-1-capacity 2
+--buffer-2-capacity 2
+--duration-s 3600
+\end{verbatim}
+Time values must be positive and finite. Buffer capacities must be
+positive integers. Use \texttt{--help} to list the options.
+
+\subsection{Inspect and hand off the run}
+Provide both exported files to the telemetry and analytics streams.
+Events use elapsed seconds and increasing sequence numbers. Count
+completed parts from \texttt{part\_complete} records. The time between
+\texttt{buffer\_enter} and \texttt{buffer\_exit} measures a part's
+buffer waiting time. The time between \texttt{process\_end} and
+downstream \texttt{buffer\_enter} measures blocking after processing.
+Events at the horizon are excluded and unfinished parts remain in the
+recorded work-in-progress.
+
+For the shared integration check, replay the same event file and compare
+the completion count with \texttt{run.json}. Record any discrepancy
+before using the trace in the dashboard walkthrough.

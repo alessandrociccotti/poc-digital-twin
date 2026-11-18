@@ -1,2 +1,62 @@
 \section{Production-line model}
-% Describe the station flow, buffer policy, and simulation assumptions.
+
+The reference plant is a discrete-event model implemented with SimPy. Parts
+arrive individually and follow die casting, finite FIFO Buffer 1, CNC
+machining, finite FIFO Buffer 2, and leak testing. Each station processes
+one part at a time. Every part passes testing.
+
+\subsection{Provisional baseline}
+These settings describe a hypothetical line. Their purpose is to provide a
+reproducible starting point for verification and subsequent experiments.
+They have not been calibrated against industrial observations.
+
+\begin{center}
+\begin{tabular}{lr}
+Parameter & Baseline \\
+\hline
+Arrival interval & 100 s \\
+Casting processing time & 60 s \\
+CNC processing time & 90 s \\
+Leak-test processing time & 30 s \\
+Capacity of each buffer & 2 parts \\
+Observation horizon & 3,600 s \\
+Random seed & 42 \\
+\end{tabular}
+\end{center}
+
+The line starts empty, with its first arrival at time zero. Arrivals occur
+at fixed intervals and wait in an unbounded FIFO queue before casting.
+Buffer capacity counts waiting parts, excluding parts held at stations.
+Blocking after service retains a finished part at its station until the
+downstream buffer has space. The station starts its next part after this
+transfer. Failures and repairs are reserved for a later implementation.
+
+\subsection{Timing and event records}
+The observation interval is $[0,T)$ with $T=3{,}600$ seconds. Events exactly
+at $T$ are excluded and the line is not drained after the horizon.
+Unfinished parts, including arrivals waiting before casting, remain in
+work-in-progress. Completion is recorded after leak testing.
+
+The JSONL export follows the shared event contract. Each record includes
+elapsed time in seconds, an increasing sequence number, event kind,
+part identifier, location, and source. Sequence numbers resolve ordering
+at equal timestamps. Processing completion and buffer entry are recorded
+separately so that their time difference exposes blocking.
+
+\subsection{Optional variability}
+Processing times are fixed by default. A positive processing coefficient
+of variation enables lognormal times, with the configured station time as
+the arithmetic mean. For mean $m$ and coefficient of variation $c$,
+$\sigma^2=\ln(1+c^2)$ and $\mu=\ln(m)-\sigma^2/2$.
+The initial optional setting is $c=0.1$. Arrivals remain deterministic.
+Casting, CNC, and testing use separate pseudorandom streams seeded with
+the configured seed, seed plus one, and seed plus two, respectively.
+
+\subsection{Verification baseline}
+With fixed times, the first completion occurs at 180 seconds and later
+completions occur every 100 seconds. The default horizon therefore contains
+36 arrivals, 35 completions, and one unfinished part at CNC. These values
+provide an analytical verification check. Additional checks cover FIFO
+order, finite buffer capacity, blocking, conservation of parts, and
+repeatability with a fixed seed. They assess the implementation against
+the stated assumptions; physical-line accuracy requires further evidence.
